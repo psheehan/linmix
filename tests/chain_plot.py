@@ -6,6 +6,7 @@ pyout = ascii.read('test.pyout')
 idlout = ascii.read('test.idlout')
 
 fig, axarr = plt.subplots(4, 2, figsize=(10, 10))
+fig.suptitle("python")
 axarr[0,0].plot(pyout['alpha'])
 axarr[0,0].set_ylabel('alpha')
 
@@ -32,6 +33,7 @@ axarr[3,1].set_ylabel('xisig')
 
 
 fig, axarr = plt.subplots(4, 2, figsize=(10, 10))
+fig.suptitle("IDL")
 axarr[0,0].plot(idlout['alpha'])
 axarr[0,0].set_ylabel('alpha')
 
