@@ -414,7 +414,7 @@ class MultiChain(object):
 
         sigsqr -= np.dot(beta, np.dot(np.cov(self.x.T) - np.median(self.xvar, axis=0), beta.T))
 
-        sigsqr = np.max(sigsqr, 0.05 * np.var(self.y - alpha - np.dot(self.x, beta)))
+        sigsqr = max(sigsqr, 0.05 * np.var(self.y - alpha - np.dot(self.x, beta)))
 
         # Randomly disperse starting values for (alpha, beta) from a
         # multivariate Students-t distribution with 4 degrees of freedom
@@ -512,7 +512,7 @@ class MultiChain(object):
             zmu = np.sum(self.xyvar_inv[:, :, j+1] * zstar, axis=1)
 
             # For Eqn (63)
-            mustar = np.empty((self.N, self.Np), dtype=float)
+            mustar = np.zeros((self.N, self.Np), dtype=float)
 
             # Do one Gaussian at a time
             for k in range(self.K):
@@ -576,7 +576,6 @@ class MultiChain(object):
     def update_alpha_beta(self):  # Step 6
         X = np.ones((self.N, self.Np+1), dtype=float)
         X[:, 1:] = self.xi
-        # Eqn (77)
         XTXinv = np.linalg.inv(np.dot(X.T, X))
         Sigma_chat = XTXinv * self.sigsqr
         # Eqn (76)
@@ -602,7 +601,7 @@ class MultiChain(object):
         self.pi = np.random.dirichlet(self.nk+1)
 
     def update_mu(self):  # Step 9
-        for k in xrange(self.K):
+        for k in range(self.K):
             if self.nk[k] > 0:
                 gk = (self.G == k)
                 # Eqn (86)
@@ -619,7 +618,7 @@ class MultiChain(object):
                 self.mu[:, k] = np.random.multivariate_normal(mean=self.mu0, cov=self.U)
 
     def update_T(self):  # Step 10
-        for k in xrange(self.K):
+        for k in range(self.K):
             if self.nk[k] > 0:
                 gk = (self.G == k)
                 xicent = self.xi[gk, :] - np.outer(np.ones(self.nk[k]), self.mu[:, k])
@@ -683,7 +682,7 @@ class MultiChain(object):
         self.ichain += 1
 
     def step(self, niter):
-        for i in xrange(niter):
+        for i in range(niter):
             self.update_cens_y()
             old_settings = np.seterr(divide='ignore', invalid='ignore')
             self.update_xi()
@@ -989,12 +988,12 @@ class MLinMix(object):
     def __init__(self, x, y, xvar=None, yvar=None, xycov=None, delta=None, K=3, nchains=4):
         self.nchains = nchains
         self.chains = [MultiChain(x, y, xvar, yvar, xycov, delta, K, self.nchains)
-                       for i in xrange(self.nchains)]
+                       for i in range(self.nchains)]
         self.Np = np.array(x).shape[1]
 
     def _get_psi(self):
         c0 = self.chains[0]
-        ndraw = c0.ichain/2
+        ndraw = int(c0.ichain/2)
         psi = np.empty((ndraw, self.nchains, self.Np+2), dtype=float)
         psi[:, :, 0] = np.vstack([c.chain['alpha'][0:ndraw] for c in self.chains]).T
         beta = np.transpose(np.dstack([c.chain['beta'][0:ndraw] for c in self.chains]), (0, 2, 1))
@@ -1033,16 +1032,16 @@ class MLinMix(object):
         for c in self.chains:
             c.initial_guess()
             c.initialize_chain(miniter)
-        for i in xrange(0, miniter, checkiter):
+        for i in range(0, miniter, checkiter):
             for c in self.chains:
                 c.step(checkiter)
             Rhat = self._get_Rhat()
 
             if not silent:
-                print
-                print "Iteration: ", i+checkiter
-                print "Rhat values for alpha, beta, log(sigma^2):"
-                print Rhat
+                print()
+                print("Iteration: ", i+checkiter)
+                print("Rhat values for alpha, beta, log(sigma^2):")
+                print(Rhat)
 
         i += checkiter
         while not np.all(Rhat < 1.1) and (i < maxiter):
@@ -1051,11 +1050,11 @@ class MLinMix(object):
                 c.step(checkiter)
             Rhat = self._get_Rhat()
             if not silent:
-                print
-                print "Iteration: ", i+checkiter
-                print "Rhat values for alpha, beta, log(sigma^2):"
-                print Rhat
+                print()
+                print("Iteration: ", i+checkiter)
+                print("Rhat values for alpha, beta, log(sigma^2):")
+                print(Rhat)
                 i += checkiter
 
         # Throw away first half of each chain
-        self.chain = np.hstack([c.chain[0:i/2] for c in self.chains])
+        self.chain = np.hstack([c.chain[0:int(i/2)] for c in self.chains])
